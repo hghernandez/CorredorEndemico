@@ -21,18 +21,55 @@ dengue[[5]] <- read.csv2("http://datos.salud.gob.ar/dataset/ceaa8e87-297e-4348-8
 #unifico los archivos
 
 
-for(i in 2:5){
+for(i in 1:5){
+colnames(dengue[[i]])[1] <- 'departamento_id'  
 colnames(dengue[[i]])[5] <- 'ano'
 }
 
-dengue_df <- do.call("rbind",dengue)
+#Unifico las listas en un dataframe
 
-#Veo las semanas epidemiologicas
+dengue_df <- do.call(rbind,dengue)
 
-View(dengue_df %>%
+
+#Veo la cantidad de NA
+
+anios <- seq(2018,2022)
+nulos <- c(rep(0,5))
+
+se_nulls <- data.frame(anios,nulos)
+
+for(i in 1:5){
+
+se_nulls[i,2]  <- sum(is.na(as.numeric(dengue[[i]]$semanas_epidemiologicas)))
+
+  
+}
+
+#Reasigno casos en 2020 para la semana los NULLS en semana epidemiologica
+
+anio_2020 <- dengue_df %>%
+       filter(ano== 2020) %>%
+       mutate(semanas_epidemiologicas= as.numeric(semanas_epidemiologicas))%>%
+       group_by(ano,semanas_epidemiologicas) %>%
+       summarise(casos= sum(cantidad_casos)) %>%
+       ungroup()%>%
+       mutate(prop= casos/sum(casos[!is.na(semanas_epidemiologicas)])) %>%
+       mutate(casos.y= prop * casos[is.na(semanas_epidemiologicas)]) %>%
+       filter(!is.na(semanas_epidemiologicas)) %>%
+       mutate(casos= round(casos+casos.y)) %>%
+       select(-c(prop,casos.y))
+
+#Calculo los casos para el resto de los años y unifico el dataframe
+
+
+casos_dengue <- dengue_df %>%
+  filter(ano != 2020) %>%
   mutate(semanas_epidemiologicas= as.numeric(semanas_epidemiologicas))%>%
-  distinct(ano,semanas_epidemiologicas) %>%
-  arrange(ano,semanas_epidemiologicas))
+  group_by(ano,semanas_epidemiologicas) %>%
+  summarise(casos= sum(cantidad_casos)) %>%
+  rbind(anio_2020) %>%
+  arrange(ano)
+
 
 #Completo un dataframe con las semanas epidemiologicas
 
@@ -50,10 +87,8 @@ semanas_epi <- c(seq(1,52), #2018
 
 all_week <- data.frame(anos,semanas_epi)
 
-#Agrupo los casos por año y semana epid
+#Joineo los casos de dengue por semana epidemiologica con el total de semanas
+#por año
 
-View(dengue_df %>%
-  mutate(semanas_epidemiologicas= as.numeric(semanas_epidemiologicas))%>%
-  group_by(ano,semanas_epidemiologicas) %>%
-  summarise(casos= sum(cantidad_casos)))
-
+all_week %>%
+  left_join(casos_dengue, by= c("anos"="ano","semanas_epi"="semanas_epidemiologicas"))
