@@ -104,10 +104,7 @@ poblacion <- c(44494502,44938712,45376763,45808747,46234830)
 poblacion <- data.frame(anios,poblacion)
 
 alfa=0.05
-esta$lnICinf=esta$lnmedia-qt(1-alfa/2,esta$n[1])*esta$lnsd/sqrt(esta$n[1])
 
-
-128*1000000/44938712
 
 media_semanal <- casos_dengue %>%
   left_join(poblacion, by= c("anos"="anios")) %>%
@@ -133,17 +130,77 @@ corredor_dengue <- media_semanal %>%
          media_to_sup= ic_sup_casos-media_casos)
 
 
+"#D7381A","#DA89FE","#FBB999","#50007F","#EDE6DE"
 
-ggplot(corredor_dengue,aes(as.numeric(semanas_epi),colour="gold"))+
+ggplot(corredor_dengue,aes(as.numeric(semanas_epi),colour="#EDE6DE"))+
   geom_area(aes(,ic_sup_casos),color="sky blue",position = 'stack',fill = I("sky blue"))+
-  geom_area(aes(,media_casos),color="gold",position = 'stack',fill = I("gold"))+
-  geom_area(aes(,media_to_inf),color="green",position = 'stack',fill = I("green"))+
+  geom_area(aes(,media_casos),color="#EDE6DE",position = 'stack',fill = I("#EDE6DE"))+
+  geom_area(aes(,media_to_inf),color="#09C723",position = 'stack',fill = I("#09C723"))+
   geom_bar(aes(,media),color="black",position = 'stack',fill = I("blue"),stat = "identity")+
+  geom_line(casos_dengue %>% filter(anos== 2020),mapping = aes(x=semanas_epi, y=casos),
+            color= "black", linewidth= 1.2, linetype= "dashed")+
   theme(
-    panel.grid.major = element_line(colour = "red"),
+    panel.grid.major = element_line(colour = "#F39276"),
     panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "red")
+    panel.background = element_rect(fill = "#F39276")
   )+
+  scale_x_continuous(breaks=seq(1,53, 1))+
   ggtitle("Corredor endémico Dengue. Argentina 2018-2022")+ 
   xlab("Semanas Epidemiológicas")+ ylab("Casos")
+
+casos_dengue %>%
+  ggplot(aes(x=semanas_epi, y=casos, color=as.factor(anos),linetype=as.factor(anos),group= anos))+
+  geom_line()
+
+##%######################################################%##
+#                                                          #
+####           Armo Enfermedad Tipo Influenza           ####
+#                                                          #
+##%######################################################%##
+
+eti <- list()
+
+eti[[1]] <- read.delim("http://datos.salud.gob.ar/dataset/c553d917-36f4-4063-ac02-1686a9120e1c/resource/f4096f8b-1692-4d5f-a6d8-09cae47931a4/download/vigilancia-respiratorias-agudas-2018-hasta-20200106.csv",
+                          header = TRUE,sep=",")
+
+eti[[1]] <- eti[[1]] %>% filter(anio %in% c(2018,2019))
+
+eti[[2]] <- openxlsx::read.xlsx("http://datos.salud.gob.ar/dataset/c553d917-36f4-4063-ac02-1686a9120e1c/resource/cda1ba2a-955a-42b0-9d45-8ce4439d2106/download/informacion-publica-respiratorias-nacional-hasta-20220309.xlsx")
+
+eti[[2]] <- eti[[2]] %>% filter(año %in% c(2020,2021)) %>%
+  rename("anio"= año)
+
+
+eti[[3]] <-openxlsx::read.xlsx("http://datos.salud.gob.ar/dataset/c553d917-36f4-4063-ac02-1686a9120e1c/resource/37feeed4-dfcd-4f39-a403-93a6b4bd90d2/download/informacion-publica-respiratorias-nacional-hasta-20230706.xlsx")
+
+eti[[3]] <- eti[[3]] %>% rename("anio"= año)
+
+
+#Unifico el dataframe
+
+eti_df <- do.call(rbind,eti)
+
+casos_eti <- eti_df %>%
+  group_by(anio,semanas_epidemiologicas)%>%
+  summarise(casos= sum(cantidad_casos))
+
+
+#Reasingo casos para la semana 1 a 17 de 2018
+
+compl_2018 = eti_df %>%
+  filter(semanas_epidemiologicas >= 1 & semanas_epidemiologicas <= 17 & anio > 2018 & anio < 2023)%>%
+  group_by(anio,semanas_epidemiologicas) %>%
+  summarise(casos= sum(cantidad_casos)) %>%
+  group_by(semanas_epidemiologicas) %>%
+  summarise(casos= median(casos)) %>%
+  mutate(anio= 2018)
+
+
+
+#Unifico todos
+
+casos_eti <- rbind(compl_2018,
+                   casos_eti)
+
+save(casos_eti,file= "casos_eti.RData")
 
