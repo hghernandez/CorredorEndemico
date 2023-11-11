@@ -108,9 +108,9 @@ alfa=0.05
 
 media_semanal <- casos_dengue %>%
   left_join(poblacion, by= c("anos"="anios")) %>%
-  mutate(tasa= round((casos/poblacion*1000000+1),4),
+  mutate(tasa= round((casos/poblacion*100000+1),4),
          lntasa= round(log(tasa),4)) %>%
-  group_by(semanas_epi)%>%
+    group_by(semanas_epi)%>%
   summarise(lntasa_media= mean(lntasa),
          sd= sd(lntasa),
          n= n(),
@@ -121,32 +121,34 @@ media_semanal <- casos_dengue %>%
 
 corredor_dengue <- media_semanal %>%
   mutate(media= exp(lntasa_media)-1,
-         ic_inf= ifelse(exp(IC_INF)-1<0,0,exp(IC_INF)-1),
-         ic_sup= exp(IC_SUP)-1,
-         media_casos= media*poblacion[5,2]/100000,
-         ic_inf_casos= ifelse(ic_inf*poblacion[5,2]/100000 < 0,0,ic_inf*poblacion[5,2]/100000),
-         ic_sup_casos= ic_sup*poblacion[5,2]/100000,
+         ic_inf= exp(IC_INF)-1,
+         ic_sup= exp(IC_SUP)+1,
+         media_casos= media*mean(poblacion$poblacion)/100000,
+         ic_inf_casos= ic_inf*mean(poblacion$poblacion)/100000,
+         ic_sup_casos= ic_sup*mean(poblacion$poblacion)/100000,
          media_to_inf = media_casos-ic_inf_casos,
          media_to_sup= ic_sup_casos-media_casos)
 
-
-"#D7381A","#DA89FE","#FBB999","#50007F","#EDE6DE"
 
 ggplot(corredor_dengue,aes(as.numeric(semanas_epi),colour="#EDE6DE"))+
   geom_area(aes(,ic_sup_casos),color="sky blue",position = 'stack',fill = I("sky blue"))+
   geom_area(aes(,media_casos),color="#EDE6DE",position = 'stack',fill = I("#EDE6DE"))+
   geom_area(aes(,media_to_inf),color="#09C723",position = 'stack',fill = I("#09C723"))+
   geom_bar(aes(,media),color="black",position = 'stack',fill = I("blue"),stat = "identity")+
-  geom_line(casos_dengue %>% filter(anos== 2020),mapping = aes(x=semanas_epi, y=casos),
-            color= "black", linewidth= 1.2, linetype= "dashed")+
-  theme(
-    panel.grid.major = element_line(colour = "#F39276"),
-    panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "#F39276")
-  )+
+  geom_line(casos_dengue %>% filter(anos== 2020),mapping = aes(x=semanas_epi, y=casos, color= "Y1"),
+            color= "black", linewidth= 1, linetype= "dashed")+
+  # theme(
+  #   panel.grid.major = element_line(colour = "#F39276"),
+  #   panel.grid.minor = element_blank(),
+  #   panel.background = element_rect(fill = "#F39276")
+  # )+
   scale_x_continuous(breaks=seq(1,53, 1))+
-  ggtitle("Corredor endémico Dengue. Argentina 2018-2022")+ 
-  xlab("Semanas Epidemiológicas")+ ylab("Casos")
+  scale_color_manual(name= "Casos 2022",values = c("Y1"="black")) +
+  labs(title= "Corredor endémico Dengue. Argentina 2018-2022",
+       x= "Semanas Epidemiológicas",y="Casos", color= "PP")
+
+
+plotly::ggplotly(graf_dengue)
 
 casos_dengue %>%
   ggplot(aes(x=semanas_epi, y=casos, color=as.factor(anos),linetype=as.factor(anos),group= anos))+
@@ -202,5 +204,109 @@ compl_2018 = eti_df %>%
 casos_eti <- rbind(compl_2018,
                    casos_eti)
 
+
+#Creamos el data frame con las poblaciones
+
+anios <- seq(2018,2022)
+poblacion <- c(44494502,44938712,45376763,45808747,46234830)
+
+poblacion <- data.frame(anios,poblacion)
+
+alfa=0.05
+
+
+#Calculo la media semanal ETI
+
+media_semanal_eti <- casos_eti %>%
+  filter(anio < 2023) %>%
+  left_join(poblacion, by= c("anio"="anios")) %>%
+  mutate(tasa= round((casos/poblacion*100000+1),4),
+         lntasa= round(log(tasa),4)) %>%
+  group_by(semanas_epidemiologicas)%>%
+  summarise(lntasa_media= mean(lntasa),
+            sd= sd(lntasa),
+            n= n(),
+            IC_INF= lntasa_media-(1*sd),
+            IC_SUP= lntasa_media+(1*sd))
+
+#Vuelvo a obtener los valores reales - 1
+
+corredor_eti <- media_semanal_eti %>%
+  mutate(media= exp(lntasa_media)-1,
+         ic_inf= ifelse(exp(IC_INF)-1<0,0,exp(IC_INF)-1),
+         ic_sup= exp(IC_SUP)-1,
+         media_casos= media/100000*mean(poblacion$poblacion),
+         ic_inf_casos= ifelse(ic_inf/100000*poblacion[5,2] < 0,0,ic_inf/100000*poblacion[5,2]),
+         ic_sup_casos= ic_sup/100000*poblacion[5,2],
+         media_to_inf = media_casos-ic_inf_casos,
+         media_to_sup= ic_sup_casos-media_casos)
+
+
+ggplot(corredor_eti,aes(as.numeric(semanas_epidemiologicas),colour="#EDE6DE"))+
+  geom_area(aes(,ic_sup_casos),color="sky blue",position = 'stack',fill = I("sky blue"))+
+  geom_area(aes(,media_casos),color="#EDE6DE",position = 'stack',fill = I("#EDE6DE"))+
+  geom_area(aes(,media_to_inf),color="#09C723",position = 'stack',fill = I("#09C723"))+
+  geom_bar(aes(,media),color="black",position = 'stack',fill = I("blue"),stat = "identity")+
+  geom_line(casos_eti %>% filter(anio == 2023),mapping = aes(x=semanas_epidemiologicas, y=casos),
+            color= "black", linewidth= 1.2, linetype= "dashed")+
+  theme(
+    panel.grid.major = element_line(colour = "#F39276"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "#F39276")
+  )+
+  scale_x_continuous(breaks=seq(1,53, 1))+
+  scale_y_continuous(labels= scales::label_number_auto())+
+   ggtitle("Corredor endémico ETI. Argentina 2018-2022")+ 
+  xlab("Semanas Epidemiológicas")+ ylab("Casos")
+
 save(casos_eti,file= "casos_eti.RData")
+load("casos_eti.RData")
+
+
+
+library(epichannel)
+
+pp <- casos_dengue %>%
+  filter(anos < 2023) %>%
+  rename("anios"=anos) %>%
+  mutate(pais= "Argentina")
+
+
+poblacion$pais = "Argentina"
+
+epi_adapted <-
+  epi_adapt_timeserie(db_disease = pp,
+                      db_population = poblacion,
+                      var_admx = pais, # common in denv and popdb
+                      var_year = anios, # common in denv and popdb
+                      var_week = semanas_epi, # only in denv
+                      # var_year = year, 
+                      # var_week = epiweek,
+                      var_event_count = casos, # only in denv
+                      var_population = poblacion) # only in popdb
+
+
+disease_now <- epi_adapted %>%
+  filter(var_year==max(var_year))
+
+disease_pre <- epi_adapted %>%
+  filter(var_year!=max(var_year))
+
+disease_channel <-
+  epi_create_channel(time_serie = disease_pre,
+                     disease_name = "denv",
+                     method = "gmean_1sd")
+
+View(disease_channel)
+
+epi_join_channel(disease_channel = disease_channel,
+                 disease_now = disease_now) %>%
+  # ggplot
+  epi_plot_channel() +
+  labs(title = "Dengue virus Endemic Channel. Iquitos, Peru 2008/2009",
+       caption = "Source: https://dengueforecasting.noaa.gov/",
+       # x = "epiweeks",
+       x = "Seasonal week",
+       y = "Number of cases") +
+  theme_bw()
 
