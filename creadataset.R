@@ -94,6 +94,9 @@ casos_dengue <- all_week %>%
   left_join(casos_dengue, by= c("anos"="ano","semanas_epi"="semanas_epidemiologicas")) %>%
   replace_na(list(casos=0))
 
+
+save(casos_dengue, file="casos_dengue.RData")
+
 #Hacemos los cálculos
 
 #Creamos el data frame con las poblaciones
@@ -111,7 +114,8 @@ media_semanal <- casos_dengue %>%
   mutate(tasa= round((casos/poblacion*100000+1),4),
          lntasa= round(log(tasa),4)) %>%
     group_by(semanas_epi)%>%
-  summarise(lntasa_media= mean(lntasa),
+  summarise(casos= sum(casos),
+         lntasa_media= mean(lntasa),
          sd= sd(lntasa),
          n= n(),
          IC_INF= lntasa_media-(qt(1-alfa/2,n)*sd/sqrt(n)),
@@ -126,33 +130,42 @@ corredor_dengue <- media_semanal %>%
          media_casos= media*mean(poblacion$poblacion)/100000,
          ic_inf_casos= ic_inf*mean(poblacion$poblacion)/100000,
          ic_sup_casos= ic_sup*mean(poblacion$poblacion)/100000,
-         media_to_inf = media_casos-ic_inf_casos,
-         media_to_sup= ic_sup_casos-media_casos)
+         new= max(c(casos,ic_sup_casos),na.rm=TRUE))
 
 
-ggplot(corredor_dengue,aes(as.numeric(semanas_epi),colour="#EDE6DE"))+
-  geom_area(aes(,ic_sup_casos),color="sky blue",position = 'stack',fill = I("sky blue"))+
-  geom_area(aes(,media_casos),color="#EDE6DE",position = 'stack',fill = I("#EDE6DE"))+
-  geom_area(aes(,media_to_inf),color="#09C723",position = 'stack',fill = I("#09C723"))+
-  geom_bar(aes(,media),color="black",position = 'stack',fill = I("blue"),stat = "identity")+
-  geom_line(casos_dengue %>% filter(anos== 2020),mapping = aes(x=semanas_epi, y=casos, color= "Y1"),
-            color= "black", linewidth= 1, linetype= "dashed")+
-  # theme(
-  #   panel.grid.major = element_line(colour = "#F39276"),
-  #   panel.grid.minor = element_blank(),
-  #   panel.background = element_rect(fill = "#F39276")
-  # )+
+#Armo el gráfico
+
+ggplot(corredor_dengue,aes(x = semanas_epi#, fill=key
+)) +
+  geom_area(aes(x=semanas_epi, y=new), fill = "#981000", alpha=0.6, stat="identity")+
+  geom_area(aes(x=semanas_epi, y= ic_sup_casos), fill = "#fee76a", stat="identity")+
+  geom_area(aes(x=semanas_epi, y= media_casos), fill = "#3e9e39",  stat="identity")+
+  geom_area(aes(x=semanas_epi, y= ic_inf_casos), fill = "white", stat="identity") +
+  geom_line(data= casos_dengue %>% filter(anos== 2020),mapping = aes(x=semanas_epi,y= casos, colour= "casos"), size=0.8)+
+  theme_bw()+
   scale_x_continuous(breaks=seq(1,53, 1))+
-  scale_color_manual(name= "Casos 2022",values = c("Y1"="black")) +
+  scale_color_manual(name="Casos 2020", values= c(casos="black"))+
+  scale_y_continuous(label= scales::label_number_si())+
   labs(title= "Corredor endémico Dengue. Argentina 2018-2022",
-       x= "Semanas Epidemiológicas",y="Casos", color= "PP")
+       x= "Semanas Epidemiológicas",y="Casos")
 
 
-plotly::ggplotly(graf_dengue)
+
+#Armo las curvas epidemicas
+
+RColorBrewer::brewer.pal.info
+RColorBrewer::brewer.pal(5,"Set1")
+
 
 casos_dengue %>%
   ggplot(aes(x=semanas_epi, y=casos, color=as.factor(anos),linetype=as.factor(anos),group= anos))+
-  geom_line()
+  geom_line(size=0.8)+
+  labs(title= "Curvas epidémicas Dengue. Argentina 2018-2022",
+       x= "Semanas Epidemiológicas",y="Casos", color= "Años",linetype= "Años")+
+  scale_color_manual(values= c("#E41A1C","#377EB8","#4DAF4A","#984EA3","#FF7F00"))+
+  scale_x_continuous(breaks=seq(1,53, 1))+
+  scale_y_continuous(label= scales::label_number_si())+
+  theme_bw()
 
 ##%######################################################%##
 #                                                          #
@@ -204,7 +217,8 @@ compl_2018 = eti_df %>%
 casos_eti <- rbind(compl_2018,
                    casos_eti)
 
-
+save(casos_eti,file= "casos_eti.RData")
+load("casos_eti.RData")
 #Creamos el data frame con las poblaciones
 
 anios <- seq(2018,2022)
@@ -223,7 +237,8 @@ media_semanal_eti <- casos_eti %>%
   mutate(tasa= round((casos/poblacion*100000+1),4),
          lntasa= round(log(tasa),4)) %>%
   group_by(semanas_epidemiologicas)%>%
-  summarise(lntasa_media= mean(lntasa),
+  summarise(casos= sum(casos),
+            lntasa_media= mean(lntasa),
             sd= sd(lntasa),
             n= n(),
             IC_INF= lntasa_media-(1*sd),
@@ -238,75 +253,44 @@ corredor_eti <- media_semanal_eti %>%
          media_casos= media/100000*mean(poblacion$poblacion),
          ic_inf_casos= ifelse(ic_inf/100000*poblacion[5,2] < 0,0,ic_inf/100000*poblacion[5,2]),
          ic_sup_casos= ic_sup/100000*poblacion[5,2],
-         media_to_inf = media_casos-ic_inf_casos,
-         media_to_sup= ic_sup_casos-media_casos)
+         new= max(c(casos,ic_sup_casos),na.rm=TRUE))
 
 
-ggplot(corredor_eti,aes(as.numeric(semanas_epidemiologicas),colour="#EDE6DE"))+
-  geom_area(aes(,ic_sup_casos),color="sky blue",position = 'stack',fill = I("sky blue"))+
-  geom_area(aes(,media_casos),color="#EDE6DE",position = 'stack',fill = I("#EDE6DE"))+
-  geom_area(aes(,media_to_inf),color="#09C723",position = 'stack',fill = I("#09C723"))+
-  geom_bar(aes(,media),color="black",position = 'stack',fill = I("blue"),stat = "identity")+
-  geom_line(casos_eti %>% filter(anio == 2023),mapping = aes(x=semanas_epidemiologicas, y=casos),
-            color= "black", linewidth= 1.2, linetype= "dashed")+
-  theme(
-    panel.grid.major = element_line(colour = "#F39276"),
-    panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "#F39276")
-  )+
+
+#Armo el gráfico
+
+ggplot(corredor_eti,aes(x = semanas_epidemiologicas#, fill=key
+)) +
+  geom_area(aes(x=semanas_epidemiologicas, y=new), fill = "#981000", alpha=0.6, stat="identity")+
+  geom_area(aes(x=semanas_epidemiologicas, y= ic_sup_casos), fill = "#fee76a", stat="identity")+
+  geom_area(aes(x=semanas_epidemiologicas, y= media_casos), fill = "#3e9e39",  stat="identity")+
+  geom_area(aes(x=semanas_epidemiologicas, y= ic_inf_casos), fill = "white", stat="identity") +
+  geom_line(data= casos_eti %>% filter(anio== 2023 & semanas_epidemiologicas <= 23),mapping = aes(x=semanas_epidemiologicas,y= casos, colour= "casos"), size=0.8)+
+  theme_bw()+
   scale_x_continuous(breaks=seq(1,53, 1))+
-  scale_y_continuous(labels= scales::label_number_auto())+
-   ggtitle("Corredor endémico ETI. Argentina 2018-2022")+ 
-  xlab("Semanas Epidemiológicas")+ ylab("Casos")
-
-save(casos_eti,file= "casos_eti.RData")
-load("casos_eti.RData")
+  scale_color_manual(name="Casos 2023", values= c(casos="black"))+
+  scale_y_continuous(label= scales::label_number_si())+
+  labs(title= "Corredor endémico ETI. Argentina 2018-2022",
+       x= "Semanas Epidemiológicas",y="Casos")
 
 
 
-library(epichannel)
+#Armo las curvas epidemicas
 
-pp <- casos_dengue %>%
-  filter(anos < 2023) %>%
-  rename("anios"=anos) %>%
-  mutate(pais= "Argentina")
+RColorBrewer::brewer.pal.info
+RColorBrewer::brewer.pal(8,"Set1")
 
 
-poblacion$pais = "Argentina"
-
-epi_adapted <-
-  epi_adapt_timeserie(db_disease = pp,
-                      db_population = poblacion,
-                      var_admx = pais, # common in denv and popdb
-                      var_year = anios, # common in denv and popdb
-                      var_week = semanas_epi, # only in denv
-                      # var_year = year, 
-                      # var_week = epiweek,
-                      var_event_count = casos, # only in denv
-                      var_population = poblacion) # only in popdb
-
-
-disease_now <- epi_adapted %>%
-  filter(var_year==max(var_year))
-
-disease_pre <- epi_adapted %>%
-  filter(var_year!=max(var_year))
-
-disease_channel <-
-  epi_create_channel(time_serie = disease_pre,
-                     disease_name = "denv",
-                     method = "gmean_1sd")
-
-View(disease_channel)
-
-epi_join_channel(disease_channel = disease_channel,
-                 disease_now = disease_now) %>%
-  # ggplot
-  epi_plot_channel() +
-  labs(title = "Dengue virus Endemic Channel. Iquitos, Peru 2008/2009",
-       caption = "Source: https://dengueforecasting.noaa.gov/",
-       # x = "epiweeks",
-       x = "Seasonal week",
-       y = "Number of cases") +
+casos_eti %>%
+  filter(anio < 2023) %>%
+  ggplot(aes(x=semanas_epidemiologicas, y=casos, color=as.factor(anio),linetype=as.factor(anio),group= anio))+
+  geom_line(size=0.9)+
+  geom_line(data= casos_eti %>% filter(anio== 2023 & semanas_epidemiologicas <26),
+            mapping = aes(x=semanas_epidemiologicas, y=casos, color=as.factor(anio),linetype=as.factor(anio)))+
+  labs(title= "Curvas epidémicas ETI. Argentina 2018-2022",
+       x= "Semanas Epidemiológicas",y="Casos", color= "Años",linetype= "Años")+
+  scale_color_manual(values= c("#E41A1C","#377EB8","#4DAF4A","#984EA3","#FF7F00","#F781BF"))+
+  scale_x_continuous(breaks=seq(1,53, 1))+
+  scale_y_continuous(label= scales::label_number_si())+
   theme_bw()
 
