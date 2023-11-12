@@ -21,7 +21,7 @@ library(tidyverse)
 library(plotly)
 
 load("casos_dengue.RData")
-load("casos_eti.RData")
+load("casos_ira.RData")
 ```
 
 ```{r xaringan-panelset, echo=FALSE}
@@ -125,10 +125,11 @@ plotly::ggplotly(graf_casos)
 :::
 
 
-## Evento Enfermedad Tipo Influenza (ETI)
+## Evento Infecciones Respiratorias Agudas (IRA)
 
+Este evento de vigilancia epidemiológica agrupa a: **ETI (Enfermedad Tipo Influenza)**, **Neumonía**, **Bronquiolitis en menores de 2 años** e **Infección respiratoria aguda internada (IRAG)**.
 
-```{r media_semanal_eti}
+```{r media_semanal_ira}
 
 #Creamos el data frame con las poblaciones
 
@@ -140,7 +141,7 @@ poblacion <- data.frame(anios,poblacion)
 alfa=0.05
 
 
-media_semanal_eti <- casos_eti %>%
+media_semanal_ira <- casos_ira %>%
   filter(anio < 2023) %>%
   left_join(poblacion, by= c("anio"="anios")) %>%
   mutate(tasa= round((casos/poblacion*100000+1),4),
@@ -155,8 +156,8 @@ media_semanal_eti <- casos_eti %>%
 
 ```
 
-```{r corredor_eti}
-corredor_eti <- media_semanal_eti %>%
+```{r corredor_ira}
+corredor_ira <- media_semanal_ira %>%
   mutate(media= exp(lntasa_media)-1,
          ic_inf= ifelse(exp(IC_INF)-1<0,0,exp(IC_INF)-1),
          ic_sup= exp(IC_SUP)-1,
@@ -171,39 +172,39 @@ corredor_eti <- media_semanal_eti %>%
 
 ::: {.panel}
 
-### Corredor endémico ETI {.panel-name}
-```{r corredor_eti_graf}
-graf_eti <- ggplot(corredor_eti,aes(x = semanas_epidemiologicas#, fill=key
+### Corredor endémico IRA {.panel-name}
+```{r corredor_ira_graf}
+graf_ira <- ggplot(corredor_ira,aes(x = semanas_epidemiologicas#, fill=key
 )) +
   geom_area(aes(x=semanas_epidemiologicas, y=new), fill = "#981000", alpha=0.6, stat="identity")+
   geom_area(aes(x=semanas_epidemiologicas, y= ic_sup_casos), fill = "#fee76a", stat="identity")+
   geom_area(aes(x=semanas_epidemiologicas, y= media_casos), fill = "#3e9e39",  stat="identity")+
   geom_area(aes(x=semanas_epidemiologicas, y= ic_inf_casos), fill = "white", stat="identity") +
-  geom_line(data= casos_eti %>% filter(anio== 2023 & semanas_epidemiologicas <= 23),mapping = aes(x=semanas_epidemiologicas,y= casos, colour= "casos"), size=0.8)+
+  geom_line(data= casos_ira %>% filter(anio== 2023 & semanas_epidemiologicas <= 23),mapping = aes(x=semanas_epidemiologicas,y= casos, colour= "casos"), size=0.8)+
   theme_bw()+
   scale_x_continuous(breaks=seq(1,53, 1))+
   scale_color_manual(name="Casos 2023", values= c(casos="black"))+
   scale_y_continuous(label= scales::label_number_si())+
-  labs(title= "Corredor endémico ETI. Argentina 2018-2022",
+  labs(title= "Corredor endémico IRA. Argentina 2018-2022",
        x= "Semanas Epidemiológicas",y="Casos")
 
 
-plotly::ggplotly(graf_eti)
+plotly::ggplotly(graf_ira)
 
 ```
 :::
 
 ::: {.panel}
 
-### Casos ETI por año {.panel-name}
+### Casos IRA por año {.panel-name}
 
-```{r graf_eti_dengue}
+```{r graf_ira}
 
-graf_casos_eti <- casos_eti %>%
+graf_casos_ira <- casos_ira %>%
   filter(anio < 2023) %>%
   ggplot(aes(x=semanas_epidemiologicas, y=casos, color=as.factor(anio),linetype=as.factor(anio),group= anio))+
   geom_line(size=0.9)+
-  geom_line(data= casos_eti %>% filter(anio== 2023 & semanas_epidemiologicas <26),
+  geom_line(data= casos_ira %>% filter(anio== 2023 & semanas_epidemiologicas <26),
             mapping = aes(x=semanas_epidemiologicas, y=casos, color=as.factor(anio),linetype=as.factor(anio)))+
   labs(title= "Curvas epidémicas ETI. Argentina 2018-2022",
        x= "Semanas Epidemiológicas",y="Casos", color= "Años",linetype= "Años")+
@@ -212,7 +213,7 @@ graf_casos_eti <- casos_eti %>%
   scale_y_continuous(label= scales::label_number_si())+
   theme_bw()
 
-plotly::ggplotly(graf_casos_eti)
+plotly::ggplotly(graf_casos_ira)
 
 ```
 :::
