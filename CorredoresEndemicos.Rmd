@@ -31,8 +31,8 @@ xaringanExtra::use_panelset()
 
 ## Corredores Endémicos Argentina
 
-En este documento les presento dos ejemplos de corredores endémicos para Argentina en base a información pública alojada en la web de datos abiertos en [http://datos.salud.gob.ar/]("http://datos.salud.gob.ar/")
-Para la elaboración de los corredores utilicé la metodología propuesta por Marcelo Bortman ([https://iris.paho.org/handle/10665.2/8562]("https://iris.paho.org/handle/10665.2/8562")), basada en la media geométrica de las tasas de incidencia y el cálculo de los interválos de confianza del 95%. 
+En este documento les presento dos ejemplos de corredores endémicos para Argentina en base a información pública alojada en la web de datos abiertos en [http://datos.salud.gob.ar/](http://datos.salud.gob.ar/)
+Para la elaboración de los corredores utilicé la metodología propuesta por Marcelo Bortman ([https://iris.paho.org/handle/10665.2/8562](https://iris.paho.org/handle/10665.2/8562)), basada en la media geométrica de las tasas de incidencia y el cálculo de los interválos de confianza del 95%. 
 
 ## Evento Dengue
 

@@ -135,13 +135,13 @@ corredor_dengue <- media_semanal %>%
 
 #Armo el gráfico
 
-ggplot(corredor_dengue,aes(x = semanas_epi#, fill=key
+graf_dengue <- ggplot(corredor_dengue,aes(x = semanas_epi#, fill=key
 )) +
   geom_area(aes(x=semanas_epi, y=new), fill = "#981000", alpha=0.6, stat="identity")+
   geom_area(aes(x=semanas_epi, y= ic_sup_casos), fill = "#fee76a", stat="identity")+
   geom_area(aes(x=semanas_epi, y= media_casos), fill = "#3e9e39",  stat="identity")+
   geom_area(aes(x=semanas_epi, y= ic_inf_casos), fill = "white", stat="identity") +
-  geom_line(data= casos_dengue %>% filter(anos== 2020),mapping = aes(x=semanas_epi,y= casos, colour= "casos"), size=0.8)+
+  geom_line(data= casos_dengue %>% filter(anos== 2020),mapping = aes(x=semanas_epi,y= casos, colour= "casos"), size=0.5)+
   theme_bw()+
   scale_x_continuous(breaks=seq(1,53, 1))+
   scale_color_manual(name="Casos 2020", values= c(casos="black"))+
@@ -150,22 +150,25 @@ ggplot(corredor_dengue,aes(x = semanas_epi#, fill=key
        x= "Semanas Epidemiológicas",y="Casos")
 
 
-
+plotly::ggplotly(graf_dengue)
 #Armo las curvas epidemicas
 
 RColorBrewer::brewer.pal.info
 RColorBrewer::brewer.pal(5,"Set1")
 
 
-casos_dengue %>%
+graf_casos <- casos_dengue %>%
   ggplot(aes(x=semanas_epi, y=casos, color=as.factor(anos),linetype=as.factor(anos),group= anos))+
-  geom_line(size=0.8)+
+  geom_line(size=0.5)+
   labs(title= "Curvas epidémicas Dengue. Argentina 2018-2022",
        x= "Semanas Epidemiológicas",y="Casos", color= "Años",linetype= "Años")+
   scale_color_manual(values= c("#E41A1C","#377EB8","#4DAF4A","#984EA3","#FF7F00"))+
   scale_x_continuous(breaks=seq(1,53, 1))+
   scale_y_continuous(label= scales::label_number_si())+
   theme_bw()
+
+plotly::ggplotly(graf_casos)
+
 
 ##%######################################################%##
 #                                                          #
