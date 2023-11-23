@@ -96,6 +96,7 @@ casos_dengue <- all_week %>%
 
 
 save(casos_dengue, file="casos_dengue.RData")
+load("casos_dengue.RData")
 
 #Hacemos los cálculos
 
@@ -135,11 +136,13 @@ corredor_dengue <- media_semanal %>%
 
 #Armo el gráfico
 
-graf_dengue <- ggplot(corredor_dengue,aes(x = semanas_epi#, fill=key
+#graf_dengue <- 
+ggplot(corredor_dengue,aes(x = semanas_epi#, fill=key
 )) +
   geom_area(aes(x=semanas_epi, y=new), fill = "#981000", alpha=0.6, stat="identity")+
   geom_area(aes(x=semanas_epi, y= ic_sup_casos), fill = "#fee76a", stat="identity")+
   geom_area(aes(x=semanas_epi, y= media_casos), fill = "#3e9e39",  stat="identity")+
+  geom_area(aes(x=semanas_epi, y= inf_to_media), fill = "grey",  stat="identity")+
   geom_area(aes(x=semanas_epi, y= ic_inf_casos), fill = "white", stat="identity") +
   geom_line(data= casos_dengue %>% filter(anos== 2020),mapping = aes(x=semanas_epi,y= casos, colour= "casos"), size=0.5)+
   theme_bw()+
@@ -254,7 +257,7 @@ media_semanal_ira <- casos_ira %>%
 
 #Vuelvo a obtener los valores reales - 1
 
-corredor_ira <- media_semanal_eti %>%
+corredor_ira <- media_semanal_ira %>%
   mutate(media= exp(lntasa_media)-1,
          ic_inf= ifelse(exp(IC_INF)-1<0,0,exp(IC_INF)-1),
          ic_sup= exp(IC_SUP)-1,
@@ -270,9 +273,9 @@ corredor_ira <- media_semanal_eti %>%
 ggplot(corredor_ira,aes(x = semanas_epidemiologicas#, fill=key
 )) +
   geom_area(aes(x=semanas_epidemiologicas, y=new), fill = "#981000", alpha=0.6, stat="identity")+
-  geom_area(aes(x=semanas_epidemiologicas, y= ic_sup_casos), fill = "#fee76a", stat="identity")+
-  geom_area(aes(x=semanas_epidemiologicas, y= media_casos), fill = "#3e9e39",  stat="identity")+
-  geom_area(aes(x=semanas_epidemiologicas, y= ic_inf_casos), fill = "white", stat="identity") +
+  geom_area(aes(x=semanas_epidemiologicas, y= ic_sup_casos), fill = "orange", stat="identity")+
+  geom_area(aes(x=semanas_epidemiologicas, y= media_casos), fill = "#fee76a",  stat="identity")+
+  geom_area(aes(x=semanas_epidemiologicas, y= ic_inf_casos), fill = "#3e9e39", stat="identity") +
   geom_line(data= casos_ira %>% filter(anio== 2023 & semanas_epidemiologicas <= 23),mapping = aes(x=semanas_epidemiologicas,y= casos, colour= "casos"), size=0.8)+
   theme_bw()+
   scale_x_continuous(breaks=seq(1,53, 1))+
