@@ -18,10 +18,25 @@ dengue[[4]] <- openxlsx::read.xlsx("http://datos.salud.gob.ar/dataset/ceaa8e87-2
 
 dengue[[5]] <- read.csv2("http://datos.salud.gob.ar/dataset/ceaa8e87-297e-4348-84b8-5c643e172500/resource/30d76bcb-b8eb-4bf3-863e-c87d41724647/download/informacion-publica-dengue-zika-nacional-anio-2022.csv",
                          fileEncoding = "Latin1", check.names = F)
+dengue[[6]] <- read.csv2("http://datos.salud.gob.ar/dataset/ceaa8e87-297e-4348-84b8-5c643e172500/resource/19075374-b180-48a0-aaaf-e0e44cd6816f/download/informacion-publica-dengue-zika-nacional-se-1-a-52-de-2023-2024-06-10.csv")
+
+dengue[[6]] <-  dengue[[6]] %>% relocate(9,.after = 5)
+
+names(dengue[[6]]) <- names(dengue[[5]])
+
+
+dengue[[7]] <- read.csv2("http://datos.salud.gob.ar/dataset/ceaa8e87-297e-4348-84b8-5c643e172500/resource/1b18a1ff-c381-4c3b-8498-8a34854690d0/download/informacion-publica-dengue-zika-nacional-se-1-a-27-de-2024-2024-07-15.csv",
+                         fileEncoding = "Latin1", check.names = F)
+
+dengue[[7]] <-  dengue[[7]] %>% relocate(9,.after = 5)
+
+names(dengue[[7]]) <- names(dengue[[5]])
+
+View(dengue[[7]])
 #unifico los archivos
 
 
-for(i in 1:5){
+for(i in 1:7){
 colnames(dengue[[i]])[1] <- 'departamento_id'  
 colnames(dengue[[i]])[5] <- 'ano'
 }
@@ -29,6 +44,11 @@ colnames(dengue[[i]])[5] <- 'ano'
 #Unifico las listas en un dataframe
 
 dengue_df <- do.call(rbind,dengue)
+
+
+dengue_df %>%
+  group_by(ano) %>%
+  summarise(sem_epi= n_distinct(semanas_epidemiologicas))
 
 
 #Veo la cantidad de NA
